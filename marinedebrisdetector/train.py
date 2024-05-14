@@ -12,7 +12,7 @@ from model.segmentation_model import SegmentationModel
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-path', type=str, default="/data/marinedebris")
+    parser.add_argument('--data-path', type=str, default="./data/marinedebris")
     parser.add_argument('--project', type=str, default="flobs-segm")
     parser.add_argument('--run-name', type=str, default=None)
     parser.add_argument('--model', type=str, default="unet")
