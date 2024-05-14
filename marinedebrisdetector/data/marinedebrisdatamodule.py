@@ -19,7 +19,7 @@ URLs = {
 }
 
 class MarineDebrisDataModule(pl.LightningDataModule):
-    def __init__(self, data_root: str = "/data/marinedebris",
+    def __init__(self, data_root: str = "./data/marinedebris",
                  batch_size: int = 32,
                  augmentation_intensity: int = 1,
                  image_size: int = 64,
