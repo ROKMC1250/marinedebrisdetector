@@ -36,7 +36,7 @@ class SegmentationModel(pl.LightningModule):
             x = x[:, np.array([1, 2, 3, 7])]
         print("model_final_input:", x.shape)
         result = self.model(x)
-        print("model_output:", x.shape)
+        print("model_output:", result.shape)
         return result
 
     def predict(self, x, return_probs=False):
