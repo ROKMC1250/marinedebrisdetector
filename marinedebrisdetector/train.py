@@ -81,7 +81,7 @@ def main(args):
     qual_image_callback = RefinedRegionsQualitativeCallback(logger,
                                                             marinedebris_datamodule.get_qualitative_validation_dataset())
 
-    trainer = pl.Trainer(accelerator="gpu", logger=logger, devices=[3],
+    trainer = pl.Trainer(accelerator="gpu", logger=logger, devices=[2],
                          callbacks=[checkpointer,
                                     plp_callback_2021,
                                     plp_callback_2022,
