@@ -54,7 +54,7 @@ class S2shipsRegion(Dataset):
 
         if self.transform is not None:
             x_image, mask = self.transform(x_image, mask)
-
+        print("S2ship:",x_image.shape)
         return x_image, mask, f"{self.region}-{item}"
 
 class S2Ships(torch.utils.data.ConcatDataset):

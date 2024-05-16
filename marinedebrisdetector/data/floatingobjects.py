@@ -221,7 +221,7 @@ class FloatingSeaObjectRegionDataset(torch.utils.data.Dataset):
 
         if self.transform is not None:
             image, mask = self.transform(image, mask)
-
+        print("Flaoting_object:", image.shape)
         return image, mask, id
 
 class FloatingSeaObjectDataset(torch.utils.data.ConcatDataset):

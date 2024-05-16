@@ -31,11 +31,13 @@ class SegmentationModel(pl.LightningModule):
         self.save_hyperparameters()
 
     def forward(self, x):
-
+        print("model_input:", x.shape)
         if x.shape[1] > self.inchannels:
             x = x[:, np.array([1, 2, 3, 7])]
-
-        return self.model(x)
+        print("model_final_input:", x.shape)
+        result = self.model(x)
+        print("model_output:", x.shape)
+        return result
 
     def predict(self, x, return_probs=False):
         probs = torch.sigmoid(self(x))
