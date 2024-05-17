@@ -21,8 +21,8 @@ pl.seed_everything(0)
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--comparison', type=str, default="ours", choices=["ours", "mifdal"])
-    parser.add_argument('--ckpt-folder', type=str, default="/data/marinedebris/checkpoints/unet++1")
-    parser.add_argument('--data-path', type=str, default="/data/marinedebris")
+    parser.add_argument('--ckpt-folder', type=str, default="./data/marinedebris/checkpoints/unet++1")
+    parser.add_argument('--data-path', type=str, default="./data/marinedebris")
     parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--workers', type=int, default=4)
     parser.add_argument('--image-size', type=int, default=128)
@@ -87,7 +87,7 @@ def main(args):
                                         batch_size=args.batch_size)
 
     logger = pl.loggers.csv_logs.CSVLogger(args.ckpt_folder, name="test_log", version=args.topk-1)
-    trainer = pl.Trainer(logger=logger, accelerator="gpu")
+    trainer = pl.Trainer(logger=logger, accelerator="gpu", devices = [3])
     trainer.test(model, marinedebris_datamodule)
 
     if args.calculate_qualitative:
