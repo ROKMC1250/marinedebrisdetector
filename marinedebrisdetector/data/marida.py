@@ -193,7 +193,7 @@ class MaridaRegionDataset(Dataset):
 
           if self.classification:
               mask = torch.tensor(row.id in DEBRIS_CLASSES).long()
-          print("Marida:", image.shape)
+        #   print("Marida:", image.shape)
           return image, mask, f"marida-{item}"
 
 class MaridaDataset(ConcatDataset):
