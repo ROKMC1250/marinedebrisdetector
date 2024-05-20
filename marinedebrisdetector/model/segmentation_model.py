@@ -49,6 +49,7 @@ class SegmentationModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         im, target, id = batch
         y_pred = self(im)
+        print("batch_num:", batch_idx, "y_pred:", y_pred, "y_target:", target)
         loss = self.criterion(y_pred.squeeze(1), target)
         return loss
 
