@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('--data-path', type=str, default="./data/marinedebris")
     parser.add_argument('--project', type=str, default="flobs-segm")
     parser.add_argument('--run-name', type=str, default=None)
-    parser.add_argument('--model', type=str, default="unet")
+    parser.add_argument('--model-name', type=str, default="unet")
     parser.add_argument('--resume-from', type=str, default=None)
     parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--weight-decay', type=float, default=1e-6)
@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument('--device', type=str, choices=["cpu", "cuda"], default="cuda")
     parser.add_argument('--hr-only', action="store_true")
     parser.add_argument('--no-checkpoint', action="store_true")
-    parser.add_argument('--max-epochs', type=int, default=100)
+    parser.add_argument('--max-epochs', type=int, default=30)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--download', action="store_true")
 
@@ -43,7 +43,6 @@ def parse_args():
 
 def main(args):
     pl.seed_everything(args.seed)
-
     model = SegmentationModel(args)
 
     marinedebris_datamodule = MarineDebrisDataModule(data_root=args.data_path,
@@ -105,15 +104,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    GPU_NUM = 3 # 원하는 GPU 번호 입력
-    device = torch.device(f'cuda:{GPU_NUM}' if torch.cuda.is_available() else 'cpu')
-    torch.cuda.set_device(device) # change allocation of current GPU
-    print ('Current cuda device ', torch.cuda.current_device()) # check
-
-    # Additional Infos
-    if device.type == 'cuda':
-        print(torch.cuda.get_device_name(GPU_NUM))
-        print('Memory Usage:')
-        print('Allocated:', round(torch.cuda.memory_allocated(GPU_NUM)/1024**3,1), 'GB')
-        print('Cached:   ', round(torch.cuda.memory_cached(GPU_NUM)/1024**3,1), 'GB')
     main(parse_args())

@@ -3,7 +3,7 @@ import torch
 from torch.optim import Adam
 import wandb
 import pytorch_lightning as pl
-from marinedebrisdetector.model import get_model
+from .model import get_model
 from marinedebrisdetector.metrics import get_loss, calculate_metrics
 from sklearn.metrics import precision_recall_curve
 
@@ -11,13 +11,13 @@ class SegmentationModel(pl.LightningModule):
     def __init__(self, args):
         super().__init__()
 
-        model = args.model
+        model = args.model_name
         self.learning_rate = args.learning_rate
         self.weight_decay = args.weight_decay
 
         self.hr_only = args.hr_only # keep only HR bands R-G-B-NIR
         if self.hr_only:
-            self.inchannels = 4
+            self.inchannels = 3
         else:
             self.inchannels = 12
 
@@ -31,13 +31,15 @@ class SegmentationModel(pl.LightningModule):
         self.save_hyperparameters()
 
     def forward(self, x):
+        # print('-'*100)
         # print("model_input:", x.shape)
         if x.shape[1] > self.inchannels:
             x = x[:, np.array([1, 2, 3, 7])]
         # print("model_final_input:", x.shape)
-        result = self.model(x)
-        # print("model_output:", result.shape)
-        return result
+        label, result = self.model(x)
+        # print("model_output:", result[-2])
+        # print('-'*100)
+        return result[-1]
 
     def predict(self, x, return_probs=False):
         probs = torch.sigmoid(self(x))
@@ -49,7 +51,6 @@ class SegmentationModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         im, target, id = batch
         y_pred = self(im)
-        print("batch_num:", batch_idx, "y_pred:", y_pred, "y_target:", target)
         loss = self.criterion(y_pred.squeeze(1), target)
         return loss
 

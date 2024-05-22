@@ -1,8 +1,11 @@
 from .unet import UNet
+from .RevCol.revcol import *
 import segmentation_models_pytorch as smp
 
-def get_model(modelname, inchannels=12, pretrained=True):
+def get_model(modelname, inchannels=3, pretrained=True):
 
+    if modelname == "revcol":
+        return FullNet(num_classes=1, channels=[128, 256, 512, 1024], layers = [1, 2, 6, 2], num_subnet = 8, drop_path=0.5)
     if modelname == "unet":
         # initialize model (random weights)
         return UNet(n_channels=inchannels,
