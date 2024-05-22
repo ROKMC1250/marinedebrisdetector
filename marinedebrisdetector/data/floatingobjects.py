@@ -36,7 +36,7 @@ trainregions = [
     "toledo_20191221",
     "tungchungChina_20190922",
     "tunisia_20180715",
-    "turkmenistan_20181030",
+    # "turkmenistan_20181030",
     # "venice_20180928",
     # "vungtau_20180423"
     ]
