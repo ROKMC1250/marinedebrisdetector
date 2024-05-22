@@ -28,6 +28,8 @@ def parse_args():
     parser.add_argument('--max-epochs', type=int, default=30)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--download', action="store_true")
+    parser.add_argument('--fcoe', type=float, default=3.0)
+    parser.add_argument('--ccoe', type=float, default=0.7)
 
     # label-refinement
     parser.add_argument('--no-label-refinement', action="store_true")

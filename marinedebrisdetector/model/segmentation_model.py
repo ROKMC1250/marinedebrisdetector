@@ -4,7 +4,7 @@ from torch.optim import Adam
 import wandb
 import pytorch_lightning as pl
 from .model import get_model
-from marinedebrisdetector.metrics import get_loss, calculate_metrics
+from metrics import get_loss, calculate_metrics, compound_loss
 from sklearn.metrics import precision_recall_curve
 
 class SegmentationModel(pl.LightningModule):
@@ -14,7 +14,7 @@ class SegmentationModel(pl.LightningModule):
         model = args.model_name
         self.learning_rate = args.learning_rate
         self.weight_decay = args.weight_decay
-
+        self.args = args
         self.hr_only = args.hr_only # keep only HR bands R-G-B-NIR
         if self.hr_only:
             self.inchannels = 3
@@ -37,9 +37,10 @@ class SegmentationModel(pl.LightningModule):
             x = x[:, np.array([1, 2, 3, 7])]
         # print("model_final_input:", x.shape)
         label, result = self.model(x)
+        result_last = result[-1]
         # print("model_output:", result[-2])
         # print('-'*100)
-        return result[-1]
+        return result, result_last
 
     def predict(self, x, return_probs=False):
         probs = torch.sigmoid(self(x))
@@ -50,8 +51,9 @@ class SegmentationModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         im, target, id = batch
-        y_pred = self(im)
+        y_preds, y_pred = self(im)
         loss = self.criterion(y_pred.squeeze(1), target)
+        # loss = compound_loss(coe=(self.args.fcoe, self.args.ccoe), y_preds=y_preds, target=target)
         return loss
 
     def training_step_end(self, losses):
@@ -59,12 +61,13 @@ class SegmentationModel(pl.LightningModule):
 
     def common_step(self, batch, batch_idx):
         images, masks, id = batch
-        logits = self(images)
-        N, _, H, W = logits.shape
+        _, logits_last = self(images)
+        N, _, H, W = logits_last.shape
         h, w = H//2, W // 2
-        logits = logits.squeeze(1)[:, h, w] # keep only center
-        loss = self.criterion(logits, target=masks.float())
-        y_scores = torch.sigmoid(logits)
+        logits_last = logits_last.squeeze(1)[:, h, w] # keep only center
+        loss = self.criterion(logits_last, target=masks.float())
+        # loss = compound_loss(coe=(self.args.fcoe, self.args.ccoe), y_preds=logits_last, target=masks.float(), common=True)
+        y_scores = torch.sigmoid(logits_last)
         return {"y_scores":y_scores.cpu().detach(), "y_true":masks.cpu().detach(), "loss":loss.cpu().numpy(), "id":id}
 
     def validation_step(self, batch, batch_idx):

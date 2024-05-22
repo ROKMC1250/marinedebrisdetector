@@ -19,7 +19,8 @@ class PlotPredictionsCallback(pl.Callback):
         images = torch.from_numpy(images).to(model.device)
         masks = torch.from_numpy(masks).to(model.device)
 
-        y_scores = torch.sigmoid(model(images))
+        _, output = model(images)
+        y_scores = torch.sigmoid(output)
 
         norm = colors.Normalize(vmin=0, vmax=1, clip=True)
         scmap = cm.ScalarMappable(norm=norm, cmap="viridis")
@@ -45,7 +46,8 @@ class RefinedRegionsQualitativeCallback(pl.Callback):
             stat = dict(id=id)
 
             image = torch.from_numpy(x).unsqueeze(0).to(model.device).float()
-            y_prob = torch.sigmoid(model(image).squeeze())
+            _,output = model(image)
+            y_prob = torch.sigmoid(output.squeeze())
             pred = y_prob > model.threshold
 
             norm = colors.Normalize(vmin=-0.1, vmax=0.1, clip=True)
@@ -89,7 +91,8 @@ class PLPCallback(pl.Callback):
         images = torch.from_numpy(np.stack(images)).to(model.device)
         masks = torch.from_numpy(np.stack(masks)).to(model.device)
 
-        y_probs = torch.sigmoid(model(images)).squeeze(1)
+        _, outputs = model(images)
+        y_probs = torch.sigmoid(outputs).squeeze(1)
 
         pred = y_probs > model.threshold
         msk = (masks > 0)
