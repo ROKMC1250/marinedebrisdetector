@@ -37,8 +37,8 @@ trainregions = [
     "tungchungChina_20190922",
     "tunisia_20180715",
     "turkmenistan_20181030",
-    "venice_20180928",
-    "vungtau_20180423"
+    # "venice_20180928",
+    # "vungtau_20180423"
     ]
 
 # same as regions in refined_floatingobjects.py
@@ -46,7 +46,7 @@ valregions = [
     "accra_20181031",
     "lagos_20190101",
     "neworleans_20200202",
-    "venice_20180630"
+    # "venice_20180630"
 ]
 
 def download(target_folder):
