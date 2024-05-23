@@ -19,7 +19,10 @@ class PlotPredictionsCallback(pl.Callback):
         images = torch.from_numpy(images).to(model.device)
         masks = torch.from_numpy(masks).to(model.device)
 
-        _, output = model(images)
+        if self.args.model_name == "revcol":
+            _, output = model(images)
+        else:
+            output = model(images)
         y_scores = torch.sigmoid(output)
 
         norm = colors.Normalize(vmin=0, vmax=1, clip=True)
@@ -35,8 +38,9 @@ class PlotPredictionsCallback(pl.Callback):
         self.logger.log_table(key="predictions", dataframe=df, step=trainer.global_step)
 
 class RefinedRegionsQualitativeCallback(pl.Callback):
-    def __init__(self, logger, dataset):
+    def __init__(self, args, logger, dataset):
         super().__init__()
+        self.args = args
         self.logger = logger
         self.dataset = dataset
 
@@ -46,7 +50,10 @@ class RefinedRegionsQualitativeCallback(pl.Callback):
             stat = dict(id=id)
 
             image = torch.from_numpy(x).unsqueeze(0).to(model.device).float()
-            _,output = model(image)
+            if self.args.model_name == "revcol":
+                _, output = model(image)
+            else:
+                output = model(image)
             y_prob = torch.sigmoid(output.squeeze())
             pred = y_prob > model.threshold
 
@@ -75,8 +82,9 @@ class RefinedRegionsQualitativeCallback(pl.Callback):
         self.logger.log_table(key="qualitative", dataframe=df, step=trainer.global_step)
 
 class PLPCallback(pl.Callback):
-    def __init__(self, logger, dataset):
+    def __init__(self,args, logger, dataset):
         super().__init__()
+        self.args = args
         self.logger = logger
         self.dataset = dataset
 
@@ -91,8 +99,11 @@ class PLPCallback(pl.Callback):
         images = torch.from_numpy(np.stack(images)).to(model.device)
         masks = torch.from_numpy(np.stack(masks)).to(model.device)
 
-        _, outputs = model(images)
-        y_probs = torch.sigmoid(outputs).squeeze(1)
+        if self.args.model_name == "revcol":
+            _, output = model(images)
+        else:
+            output = model(images)
+        y_probs = torch.sigmoid(output).squeeze(1)
 
         pred = y_probs > model.threshold
         msk = (masks > 0)

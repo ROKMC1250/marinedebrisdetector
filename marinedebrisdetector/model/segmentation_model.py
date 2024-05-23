@@ -10,8 +10,11 @@ from sklearn.metrics import precision_recall_curve
 class SegmentationModel(pl.LightningModule):
     def __init__(self, args):
         super().__init__()
+        try:
+            self.model_name = args.model
+        except:
+            self.model_name = args.model_name
 
-        model = args.model_name
         self.learning_rate = args.learning_rate
         self.weight_decay = args.weight_decay
         self.args = args
@@ -21,7 +24,7 @@ class SegmentationModel(pl.LightningModule):
         else:
             self.inchannels = 12
 
-        self.model = get_model(model, inchannels=self.inchannels, pretrained=False)
+        self.model = get_model(self.model_name, inchannels=self.inchannels, pretrained=False)
 
         self.criterion = get_loss()
 
@@ -31,16 +34,15 @@ class SegmentationModel(pl.LightningModule):
         self.save_hyperparameters()
 
     def forward(self, x):
-        # print('-'*100)
-        # print("model_input:", x.shape)
         if x.shape[1] > self.inchannels:
             x = x[:, np.array([1, 2, 3, 7])]
-        # print("model_final_input:", x.shape)
-        label, result = self.model(x)
-        result_last = result[-1]
-        # print("model_output:", result[-2])
-        # print('-'*100)
-        return result, result_last
+        if self.model_name == "revcol":
+            label, result = self.model(x)
+            result_last = result[-1]
+            return result, result_last
+        else:
+            result = self.model(x)
+            return result
 
     def predict(self, x, return_probs=False):
         probs = torch.sigmoid(self(x))
@@ -51,24 +53,36 @@ class SegmentationModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         im, target, id = batch
-        y_preds, y_pred = self(im)
-        loss = self.criterion(y_pred.squeeze(1), target)
-        # loss = compound_loss(coe=(self.args.fcoe, self.args.ccoe), y_preds=y_preds, target=target)
-        return loss
+        if self.model_name == "revcol":
+            y_preds, y_pred = self(im)
+            loss = self.criterion(y_pred.squeeze(1), target)
+            return loss
+        else:
+            y_pred = self(im)
+            loss = self.criterion(y_pred.squeeze(1), target)
+            return loss
 
     def training_step_end(self, losses):
         self.log("train_loss", losses.cpu().detach().mean())
 
     def common_step(self, batch, batch_idx):
         images, masks, id = batch
-        _, logits_last = self(images)
-        N, _, H, W = logits_last.shape
-        h, w = H//2, W // 2
-        logits_last = logits_last.squeeze(1)[:, h, w] # keep only center
-        loss = self.criterion(logits_last, target=masks.float())
-        # loss = compound_loss(coe=(self.args.fcoe, self.args.ccoe), y_preds=logits_last, target=masks.float(), common=True)
-        y_scores = torch.sigmoid(logits_last)
-        return {"y_scores":y_scores.cpu().detach(), "y_true":masks.cpu().detach(), "loss":loss.cpu().numpy(), "id":id}
+        if self.model_name == "revcol":
+            _, logits_last = self(images)
+            N, _, H, W = logits_last.shape
+            h, w = H//2, W // 2
+            logits_last = logits_last.squeeze(1)[:, h, w] # keep only center
+            loss = self.criterion(logits_last, target=masks.float())
+            y_scores = torch.sigmoid(logits_last)
+            return {"y_scores":y_scores.cpu().detach(), "y_true":masks.cpu().detach(), "loss":loss.cpu().numpy(), "id":id}
+        else:
+            logits = self(images)
+            N, _, H, W = logits.shape
+            h, w = H//2, W // 2
+            logits = logits.squeeze(1)[:, h, w] # keep only center
+            loss = self.criterion(logits, target=masks.float())
+            y_scores = torch.sigmoid(logits)
+            return {"y_scores":y_scores.cpu().detach(), "y_true":masks.cpu().detach(), "loss":loss.cpu().numpy(), "id":id}
 
     def validation_step(self, batch, batch_idx):
         return self.common_step(batch, batch_idx)

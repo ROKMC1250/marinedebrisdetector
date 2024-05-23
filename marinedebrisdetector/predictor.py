@@ -12,14 +12,14 @@ from marinedebrisdetector.transforms import get_transform
 class ScenePredictor():
 
     #def __init__(self, modelname, modelpath, image_size=(480,480), device="cpu", offset=64, use_test_aug=2, add_fdi_ndvi=False):
-    def __init__(self, image_size=(480,480), device="cpu", offset=64,
+    def __init__(self, args, image_size=(480,480), device="cpu", offset=64,
                  use_test_aug=2, add_fdi_ndvi=False, activation="sigmoid"):
         self.image_size = image_size
         self.activation = activation
         self.device = device
         self.offset = offset # remove border effects from the CNN
         self.use_test_aug = use_test_aug
-
+        self.args = args
         #self.model = UNet(n_channels=12, n_classes=1, bilinear=False)
         self.transform = get_transform("test", add_fdi_ndvi=add_fdi_ndvi, cropsize=image_size[0])
 
@@ -74,8 +74,10 @@ class ScenePredictor():
                 # predict
                 with torch.no_grad():
                     x = image.unsqueeze(0)
-
-                    out = self.model(x)
+                    if self.args.model_name == 'revcol':
+                        _, out = self.model(x)
+                    else:
+                        out = self.model(x)
 
                     if isinstance(out, tuple):
                         y_score, y_pred = self.model(x)

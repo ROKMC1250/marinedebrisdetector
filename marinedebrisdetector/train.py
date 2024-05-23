@@ -76,13 +76,13 @@ def main(args):
         save_last=False,
     )
 
-    plp_callback_2021 = PLPCallback(logger, marinedebris_datamodule.get_plp_dataset(2021))
-    plp_callback_2022 = PLPCallback(logger, marinedebris_datamodule.get_plp_dataset(2022))
+    plp_callback_2021 = PLPCallback(args, logger, marinedebris_datamodule.get_plp_dataset(2021))
+    plp_callback_2022 = PLPCallback(args, logger, marinedebris_datamodule.get_plp_dataset(2022))
 
-    qual_image_callback = RefinedRegionsQualitativeCallback(logger,
+    qual_image_callback = RefinedRegionsQualitativeCallback(args, logger,
                                                             marinedebris_datamodule.get_qualitative_validation_dataset())
 
-    trainer = pl.Trainer(accelerator="gpu", logger=logger, devices=[3],
+    trainer = pl.Trainer(accelerator="gpu", logger=logger, devices=1,
                          callbacks=[checkpointer,
                                     plp_callback_2021,
                                     plp_callback_2022,

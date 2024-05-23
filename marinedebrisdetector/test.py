@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument('--topk', type=int, default=1)
     parser.add_argument('--calculate_qualitative', action='store_true')
     parser.add_argument('--device', type=str, choices=["cpu", "cuda"], default="cuda")
+    parser.add_argument('--model-name', type=str, choices=["unet++", "revcol", "unet"], default="unet++")
 
     args = parser.parse_args()
 
@@ -87,13 +88,13 @@ def main(args):
                                         batch_size=args.batch_size)
 
     logger = pl.loggers.csv_logs.CSVLogger(args.ckpt_folder, name="test_log", version=args.topk-1)
-    trainer = pl.Trainer(logger=logger, accelerator="gpu", devices = [3])
+    trainer = pl.Trainer(logger=logger, accelerator="gpu", devices = 1)
     trainer.test(model, marinedebris_datamodule)
 
     if args.calculate_qualitative:
 
         model = model.eval()
-        model = TestTimeAugmentation_wapper(model)
+        model = TestTimeAugmentation_wapper(model, args=args)
 
 
         write_qualitative(model,
@@ -111,28 +112,42 @@ def main(args):
                               path=os.path.join(args.ckpt_folder, "qualitative"))
 
 
-        predictor = ScenePredictor(device="cuda")
+        predictor = ScenePredictor(args=args, device="cuda")
         for name, path in marinedebris_datamodule.get_prediction_scene_paths():
             predpath = os.path.join(args.ckpt_folder, "test_scenes", name + "_prediction.tif")
             os.makedirs(os.path.dirname(predpath), exist_ok=True)
             print(f"writing {os.path.abspath(predpath)}")
-            predictor.predict(TestTimeAugmentation_wapper(model), path, predpath)
+            predictor.predict(TestTimeAugmentation_wapper(model, args), path, predpath)
 
 class TestTimeAugmentation_wapper(torch.nn.Module):
-    def __init__(self, model):
+    def __init__(self, model, args):
         super().__init__()
+        try:
+            self.model_name = args.model
+        except:
+            self.model_name = args.model_name
         self.model = model
         self.threshold = model.threshold
 
     def forward(self, x):
-        y_logits = self.model(x)
+        if self.model_name == 'revcol':
+            _, y_logits = self.model(x)
+            _, fliplr = self.model(torch.fliplr(x))
+            _, flipud = self.model(torch.flipud(x))
+            y_logits += torch.fliplr(fliplr)  # fliplr)
+            y_logits += torch.flipud(flipud)  # flipud
 
-        y_logits += torch.fliplr(self.model(torch.fliplr(x)))  # fliplr)
-        y_logits += torch.flipud(self.model(torch.flipud(x)))  # flipud
-
-        for rot in [1, 2, 3]:  # 90, 180, 270 degrees
-            y_logits += torch.rot90(self.model(torch.rot90(x, rot, [2, 3])), -rot, [2, 3])
-        y_logits /= 6
+            for rot in [1, 2, 3]:  # 90, 180, 270 degrees
+                _, rot90 = self.model(torch.rot90(x,rot,[2,3]))  
+                y_logits += torch.rot90(rot90, -rot, [2, 3])
+            y_logits /= 6
+        else:
+            y_logits = self.model(x)
+            y_logits += torch.fliplr(self.model(torch.fliplr(x)))  # fliplr)
+            y_logits += torch.flipud(self.model(torch.flipud(x)))  # flipud
+            for rot in [1, 2, 3]:  # 90, 180, 270 degrees
+                y_logits += torch.rot90(self.model(torch.rot90(x,rot,[2,3]), -rot, [2, 3]))
+            y_logits /= 6
 
         return y_logits
 

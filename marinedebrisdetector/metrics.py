@@ -41,11 +41,13 @@ def compound_loss(coe, y_preds, target, common = False):
         multi_loss.append(ihx)
         loss = torch.sum(torch.stack(multi_loss), dim=0)
 
-    return loss
+    return loss 
 
 def calculate_metrics(targets, scores, optimal_threshold):
+    print(scores[0])
     predictions = scores > optimal_threshold
-
+    print(optimal_threshold)
+    print(predictions[0])
     auroc = roc_auc_score(targets, scores)
     p, r, f, s = precision_recall_fscore_support(y_true=targets,
                                                  y_pred=predictions, zero_division=0, average="binary")
